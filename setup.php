@@ -245,21 +245,21 @@ CSS;
                     echo '</li>';
                     
                     // config.php schreibbar
-                    $config_writable = is_writable('config.php');
+                    $config_writable = is_writable(__DIR__ . '/config.php');
                     if (!$config_writable) $all_ok = false;
                     echo '<li class="' . ($config_writable ? 'success' : 'error') . '">';
                     echo ($config_writable ? '✓' : '✗') . ' config.php schreibbar';
                     echo '</li>';
                     
                     // uploads/ Verzeichnis
-                    $uploads_exists = is_dir('uploads');
-                    $uploads_writable = $uploads_exists && is_writable('uploads');
+                    $uploads_exists = is_dir(__DIR__ . '/uploads');
+                    $uploads_writable = $uploads_exists && is_writable(__DIR__ . '/uploads');
                     echo '<li class="' . ($uploads_writable ? 'success' : 'warning') . '">';
                     echo ($uploads_writable ? '✓' : '⚠') . ' uploads/ Verzeichnis ' . ($uploads_writable ? 'OK' : 'nicht gefunden/schreibbar');
                     echo '</li>';
                     
                     // database/schema.sql
-                    $schema_exists = file_exists('database/schema.sql');
+                    $schema_exists = file_exists(__DIR__ . '/database/schema.sql');
                     if (!$schema_exists) $all_ok = false;
                     echo '<li class="' . ($schema_exists ? 'success' : 'error') . '">';
                     echo ($schema_exists ? '✓' : '✗') . ' database/schema.sql vorhanden';
@@ -314,18 +314,18 @@ CSS;
                             $pdo->exec("USE `$db_name`");
                             
                             // Schema importieren
-                            $schema = file_get_contents('database/schema.sql');
+                            $schema = file_get_contents(__DIR__ . '/database/schema.sql');
                             $pdo->exec($schema);
                             
                             // config.php aktualisieren
-                            $config = file_get_contents('config.php');
+                            $config = file_get_contents(__DIR__ . '/config.php');
                             $config = preg_replace("/define\('DB_HOST',\s*'[^']*'\);/", "define('DB_HOST', '$db_host');", $config);
                             $config = preg_replace("/define\('DB_NAME',\s*'[^']*'\);/", "define('DB_NAME', '$db_name');", $config);
                             $config = preg_replace("/define\('DB_USER',\s*'[^']*'\);/", "define('DB_USER', '$db_user');", $config);
                             $config = preg_replace("/define\('DB_PASS',\s*'[^']*'\);/", "define('DB_PASS', '$db_pass');", $config);
                             $config = preg_replace("/define\('DEBUG_MODE',\s*true\);/", "define('DEBUG_MODE', false);", $config);
                             
-                            file_put_contents('config.php', $config);
+                            file_put_contents(__DIR__ . '/config.php', $config);
                             
                             $_SESSION['db_configured'] = true;
                             header('Location: ?step=3');
