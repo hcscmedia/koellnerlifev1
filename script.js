@@ -6,6 +6,9 @@ const navLinks = document.querySelectorAll('.nav-link');
 // Toggle mobile menu
 if (hamburger) {
     hamburger.addEventListener('click', () => {
+        const isExpanded = hamburger.getAttribute('aria-expanded') === 'true';
+        hamburger.setAttribute('aria-expanded', !isExpanded);
+        hamburger.setAttribute('aria-label', isExpanded ? 'Menü öffnen' : 'Menü schließen');
         hamburger.classList.toggle('active');
         navMenu.classList.toggle('active');
     });
@@ -14,7 +17,11 @@ if (hamburger) {
 // Close mobile menu when a link is clicked
 navLinks.forEach(link => {
     link.addEventListener('click', () => {
-        hamburger.classList.remove('active');
+        if (hamburger) {
+            hamburger.classList.remove('active');
+            hamburger.setAttribute('aria-expanded', 'false');
+            hamburger.setAttribute('aria-label', 'Menü öffnen');
+        }
         navMenu.classList.remove('active');
     });
 });
@@ -35,21 +42,26 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Navbar scroll effect
-let lastScroll = 0;
+// Navbar scroll effect with throttling
 const navbar = document.querySelector('.navbar');
+let ticking = false;
 
 window.addEventListener('scroll', () => {
-    const currentScroll = window.pageYOffset;
-    
-    // Add shadow on scroll
-    if (currentScroll > 50) {
-        navbar.style.boxShadow = '0 10px 40px rgba(31, 38, 135, 0.2)';
-    } else {
-        navbar.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.15)';
+    if (!ticking) {
+        window.requestAnimationFrame(() => {
+            const currentScroll = window.pageYOffset;
+            
+            // Add shadow on scroll
+            if (currentScroll > 50) {
+                navbar.style.boxShadow = '0 10px 40px rgba(31, 38, 135, 0.2)';
+            } else {
+                navbar.style.boxShadow = '0 8px 32px 0 rgba(31, 38, 135, 0.15)';
+            }
+            
+            ticking = false;
+        });
+        ticking = true;
     }
-    
-    lastScroll = currentScroll;
 });
 
 // Intersection Observer for scroll animations
@@ -124,8 +136,6 @@ if (contactForm) {
                 submitButton.style.background = '';
                 submitButton.disabled = false;
             }, 3000);
-            
-            console.log('Form submitted:', data);
         }, 1500);
     });
 }
@@ -133,50 +143,56 @@ if (contactForm) {
 // Add parallax effect to hero section
 const hero = document.querySelector('.hero');
 const gradientOrbs = document.querySelectorAll('.gradient-orb');
+let parallaxTicking = false;
 
 window.addEventListener('scroll', () => {
-    if (hero && window.pageYOffset < window.innerHeight) {
-        const scrolled = window.pageYOffset;
-        gradientOrbs.forEach((orb, index) => {
-            const speed = 0.5 + (index * 0.2);
-            orb.style.transform = `translate(${scrolled * speed * 0.1}px, ${scrolled * speed * 0.1}px)`;
+    if (!parallaxTicking && hero && window.pageYOffset < window.innerHeight) {
+        window.requestAnimationFrame(() => {
+            const scrolled = window.pageYOffset;
+            gradientOrbs.forEach((orb, index) => {
+                const speed = 0.5 + (index * 0.2);
+                const translateX = scrolled * speed * 0.1;
+                const translateY = scrolled * speed * 0.1;
+                
+                // Preserve the original transform for orb-3
+                if (index === 2) {
+                    orb.style.transform = `translate(calc(-50% + ${translateX}px), calc(-50% + ${translateY}px))`;
+                } else {
+                    orb.style.transform = `translate(${translateX}px, ${translateY}px)`;
+                }
+            });
+            parallaxTicking = false;
         });
+        parallaxTicking = true;
     }
 });
 
 // Add active state to nav links based on scroll position
 const sections = document.querySelectorAll('section[id]');
+let navTicking = false;
 
 window.addEventListener('scroll', () => {
-    const scrollY = window.pageYOffset;
-    
-    sections.forEach(current => {
-        const sectionHeight = current.offsetHeight;
-        const sectionTop = current.offsetTop - 100;
-        const sectionId = current.getAttribute('id');
-        const correspondingLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
-        
-        if (correspondingLink) {
-            if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
-                correspondingLink.style.color = 'var(--primary-color)';
-            } else {
-                correspondingLink.style.color = '';
-            }
-        }
-    });
-});
-
-// Add cursor trail effect (optional, subtle enhancement)
-let cursorTrail = [];
-const maxTrailLength = 10;
-
-document.addEventListener('mousemove', (e) => {
-    if (window.innerWidth > 768) { // Only on desktop
-        cursorTrail.push({ x: e.clientX, y: e.clientY, time: Date.now() });
-        
-        if (cursorTrail.length > maxTrailLength) {
-            cursorTrail.shift();
-        }
+    if (!navTicking) {
+        window.requestAnimationFrame(() => {
+            const scrollY = window.pageYOffset;
+            
+            sections.forEach(current => {
+                const sectionHeight = current.offsetHeight;
+                const sectionTop = current.offsetTop - 100;
+                const sectionId = current.getAttribute('id');
+                const correspondingLink = document.querySelector(`.nav-link[href="#${sectionId}"]`);
+                
+                if (correspondingLink) {
+                    if (scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) {
+                        correspondingLink.style.color = 'var(--primary-color)';
+                    } else {
+                        correspondingLink.style.color = '';
+                    }
+                }
+            });
+            navTicking = false;
+        });
+        navTicking = true;
     }
 });
 
@@ -186,15 +202,8 @@ window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
         // Handle resize events here if needed
-        console.log('Window resized');
     }, 250);
 });
 
-// Add loading animation
-window.addEventListener('load', () => {
-    document.body.style.opacity = '0';
-    setTimeout(() => {
-        document.body.style.transition = 'opacity 0.5s ease';
-        document.body.style.opacity = '1';
-    }, 100);
-});
+// Smooth page load
+document.body.style.opacity = '1';

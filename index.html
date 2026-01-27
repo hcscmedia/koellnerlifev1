@@ -14,17 +14,17 @@
             <div class="nav-brand">
                 <a href="#home">Koellner.life</a>
             </div>
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="nav-menu">
                 <li><a href="#home" class="nav-link">Home</a></li>
                 <li><a href="#about" class="nav-link">Über mich</a></li>
                 <li><a href="#services" class="nav-link">Leistungen</a></li>
                 <li><a href="#contact" class="nav-link">Kontakt</a></li>
             </ul>
-            <div class="hamburger">
+            <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-menu">
                 <span></span>
                 <span></span>
                 <span></span>
-            </div>
+            </button>
         </div>
     </nav>
 
@@ -133,15 +133,15 @@
                     <form class="contact-form glass-card">
                         <div class="form-group">
                             <label for="name">Name</label>
-                            <input type="text" id="name" name="name" required>
+                            <input type="text" id="name" name="name" required aria-required="true">
                         </div>
                         <div class="form-group">
                             <label for="email">E-Mail</label>
-                            <input type="email" id="email" name="email" required>
+                            <input type="email" id="email" name="email" required aria-required="true">
                         </div>
                         <div class="form-group">
                             <label for="message">Nachricht</label>
-                            <textarea id="message" name="message" rows="5" required></textarea>
+                            <textarea id="message" name="message" rows="5" required aria-required="true"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary btn-full">Nachricht senden</button>
                     </form>
