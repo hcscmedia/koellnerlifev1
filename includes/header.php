@@ -40,10 +40,10 @@ $page_title = isset($page_titles[$current_page]) ? $page_titles[$current_page] .
     <meta property="twitter:description" content="<?php echo escape_html(SITE_DESCRIPTION); ?>">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/images/favicon.png">
+    <link rel="icon" type="image/png" href="<?php echo BASE_PATH; ?>/assets/images/favicon.png">
     
     <!-- CSS -->
-    <link rel="stylesheet" href="/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo BASE_PATH; ?>/assets/css/style.css">
     
     <!-- Font: Inter from Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

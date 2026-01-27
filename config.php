@@ -25,6 +25,11 @@ define('SOCIAL_TWITTER', 'https://twitter.com');
 define('SITE_CHARSET', 'UTF-8');
 define('SITE_LANGUAGE', 'de');
 
+// Base Path (für Unterverzeichnis-Installation wie /koellnerlife/)
+// Automatisch ermitteln oder manuell setzen: define('BASE_PATH', '/koellnerlife');
+$script_name = dirname($_SERVER['SCRIPT_NAME']);
+define('BASE_PATH', $script_name === '/' ? '' : rtrim($script_name, '/'));
+
 // Error Reporting (für Entwicklung auf true, für Produktion auf false)
 define('DEBUG_MODE', false);
 

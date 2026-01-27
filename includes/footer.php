@@ -11,11 +11,11 @@
                 <div class="footer-section">
                     <h4>Quick Links</h4>
                     <ul class="footer-links">
-                        <li><a href="/">Startseite</a></li>
-                        <li><a href="/pages/services.php">Leistungen</a></li>
-                        <li><a href="/pages/projects.php">Projekte</a></li>
-                        <li><a href="/pages/about.php">Über mich</a></li>
-                        <li><a href="/pages/contact.php">Kontakt</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>/">Startseite</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>/pages/services.php">Leistungen</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>/pages/projects.php">Projekte</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>/pages/about.php">Über mich</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>/pages/contact.php">Kontakt</a></li>
                     </ul>
                 </div>
                 
@@ -67,6 +67,6 @@
     </footer>
     
     <!-- JavaScript -->
-    <script src="/assets/js/main.js"></script>
+    <script src="<?php echo BASE_PATH; ?>/assets/js/main.js"></script>
 </body>
 </html>
