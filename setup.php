@@ -47,24 +47,43 @@ if ($step == 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("USE `$db_name`");
             
-            // Schema importieren
+            // Schema importieren mit verbessertem Parsing
             $schema = file_get_contents(__DIR__ . '/database/schema.sql');
             
-            // SQL Statements aufteilen und säubern
-            $statements = explode(';', $schema);
+            // Entferne alle Kommentare zuerst
+            // Entferne einzeilige Kommentare (-- ...)
+            $schema = preg_replace('/--[^\n]*\n/', "\n", $schema);
+            // Entferne mehrzeilige Kommentare (/* ... */)
+            $schema = preg_replace('/\/\*.*?\*\//s', '', $schema);
+            
+            // SQL Statements aufteilen (Semikolon + Zeilenumbruch)
+            $statements = preg_split('/;\s*[\r\n]+/', $schema, -1, PREG_SPLIT_NO_EMPTY);
+            
+            $executed = 0;
             foreach ($statements as $statement) {
                 $statement = trim($statement);
-                // Überspringe leere Statements und Kommentare
-                if (empty($statement) || preg_match('/^--/', $statement)) {
+                
+                // Überspringe leere Statements
+                if (empty($statement)) {
                     continue;
                 }
-                // Entferne Block-Kommentare
-                $statement = preg_replace('/\/\*.*?\*\//s', '', $statement);
-                $statement = trim($statement);
                 
-                if (!empty($statement)) {
+                // Führe Statement aus
+                try {
                     $pdo->exec($statement);
+                    $executed++;
+                } catch (PDOException $e) {
+                    // Fehler loggen aber weitermachen (für IF NOT EXISTS)
+                    error_log("SQL Error: " . $e->getMessage());
                 }
+            }
+            
+            // Prüfe ob Tabellen erstellt wurden
+            $stmt = $pdo->query("SHOW TABLES");
+            $tables = $stmt->fetchAll(PDO::FETCH_COLUMN);
+            
+            if (count($tables) < 5) {
+                throw new Exception("Schema-Import fehlgeschlagen. Nur " . count($tables) . " Tabellen erstellt.");
             }
             
             // config.php aktualisieren
