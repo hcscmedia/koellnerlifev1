@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================================================
-// Navbar Scroll Effect
+// Navbar Scroll Effect - Enhanced
 // ============================================================================
 
 let lastScroll = 0;
@@ -53,17 +53,42 @@ window.addEventListener('scroll', function() {
     const currentScroll = window.pageYOffset;
     
     if (navbar) {
-        // Add shadow on scroll
+        // Add scrolled class for styling
         if (currentScroll > 50) {
-            navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.3)';
-            navbar.style.backgroundColor = 'rgba(10, 10, 15, 0.95)';
+            navbar.classList.add('scrolled');
         } else {
-            navbar.style.boxShadow = '';
-            navbar.style.backgroundColor = 'rgba(10, 10, 15, 0.8)';
+            navbar.classList.remove('scrolled');
         }
     }
     
     lastScroll = currentScroll;
+});
+
+// ============================================================================
+// Scroll Animation Observer
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver(function(entries) {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all cards and sections
+    const animatedElements = document.querySelectorAll('.card, .service-card, .stat-card, .project-card');
+    animatedElements.forEach(element => {
+        element.classList.add('animate-on-scroll');
+        observer.observe(element);
+    });
 });
 
 // ============================================================================
