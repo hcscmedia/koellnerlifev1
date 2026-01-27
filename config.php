@@ -36,11 +36,28 @@ if (DEBUG_MODE) {
     ini_set('display_errors', 0);
 }
 
-// Database Configuration (optional für zukünftige Erweiterungen)
+// Database Configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', 'koellner_life');
-define('DB_USER', '');
-define('DB_PASSWORD', '');
+define('DB_USER', 'root');
+define('DB_PASS', '');
+
+// Admin Panel Settings
+define('ADMIN_PATH', '/admin');
+define('SESSION_LIFETIME', 3600); // 1 Stunde
+define('MAX_LOGIN_ATTEMPTS', 5);
+define('LOGIN_LOCKOUT_TIME', 900); // 15 Minuten
+
+// Upload Settings
+define('UPLOAD_DIR', __DIR__ . '/uploads');
+define('MAX_UPLOAD_SIZE', 5242880); // 5MB
+define('ALLOWED_IMAGE_TYPES', ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+
+// Security
+define('ADMIN_SESSION_NAME', 'koellner_admin_session');
+
+// Autoload Database Class
+require_once __DIR__ . '/database/Database.php';
 
 // Aktuelle Seite ermitteln
 $current_page = basename($_SERVER['PHP_SELF'], '.php');
