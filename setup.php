@@ -1,10 +1,13 @@
 <?php
 /**
- * Web-basiertes Setup-Script
+ * Web-basiertes Setup-Script - Optimierte Version
  * Ermöglicht die Installation über den Browser
  * 
  * WICHTIG: Diese Datei nach der Installation löschen oder umbenennen!
  */
+
+// Output Buffering starten
+ob_start();
 
 // Sicherheitscheck: Installation nur einmal erlauben
 $lock_file = __DIR__ . '/.installed.lock';
@@ -17,6 +20,153 @@ session_start();
 $step = $_GET['step'] ?? 1;
 $errors = [];
 $success = [];
+
+// ========================================
+// POST REQUEST VERARBEITUNG (VOR HTML OUTPUT)
+// ========================================
+
+// SCHRITT 2: Datenbank-Konfiguration verarbeiten
+if ($step == 2 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $db_host = $_POST['db_host'] ?? '';
+    $db_name = $_POST['db_name'] ?? '';
+    $db_user = $_POST['db_user'] ?? '';
+    $db_pass = $_POST['db_pass'] ?? '';
+    
+    if (empty($db_host) || empty($db_name) || empty($db_user)) {
+        $errors[] = 'Bitte füllen Sie alle Pflichtfelder aus.';
+    } else {
+        try {
+            $pdo = new PDO(
+                "mysql:host=$db_host;charset=utf8mb4",
+                $db_user,
+                $db_pass,
+                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            );
+            
+            // Datenbank erstellen
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE `$db_name`");
+            
+            // Schema importieren
+            $schema = file_get_contents(__DIR__ . '/database/schema.sql');
+            
+            // SQL Statements aufteilen und säubern
+            $statements = explode(';', $schema);
+            foreach ($statements as $statement) {
+                $statement = trim($statement);
+                // Überspringe leere Statements und Kommentare
+                if (empty($statement) || preg_match('/^--/', $statement)) {
+                    continue;
+                }
+                // Entferne Block-Kommentare
+                $statement = preg_replace('/\/\*.*?\*\//s', '', $statement);
+                $statement = trim($statement);
+                
+                if (!empty($statement)) {
+                    $pdo->exec($statement);
+                }
+            }
+            
+            // config.php aktualisieren
+            $config = file_get_contents(__DIR__ . '/config.php');
+            $config = preg_replace("/define\('DB_HOST',\s*'[^']*'\);/", "define('DB_HOST', '$db_host');", $config);
+            $config = preg_replace("/define\('DB_NAME',\s*'[^']*'\);/", "define('DB_NAME', '$db_name');", $config);
+            $config = preg_replace("/define\('DB_USER',\s*'[^']*'\);/", "define('DB_USER', '$db_user');", $config);
+            $config = preg_replace("/define\('DB_PASS',\s*'[^']*'\);/", "define('DB_PASS', '$db_pass');", $config);
+            $config = preg_replace("/define\('DEBUG_MODE',\s*true\);/", "define('DEBUG_MODE', false);", $config);
+            
+            file_put_contents(__DIR__ . '/config.php', $config);
+            
+            $_SESSION['db_configured'] = true;
+            
+            // Redirect zu Schritt 3
+            ob_end_clean();
+            header('Location: ?step=3');
+            exit;
+            
+        } catch (PDOException $e) {
+            $errors[] = 'Datenbankfehler: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $errors[] = 'Fehler: ' . $e->getMessage();
+        }
+    }
+}
+
+// SCHRITT 3: Admin-Account erstellen
+if ($step == 3 && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!isset($_SESSION['db_configured'])) {
+        ob_end_clean();
+        header('Location: ?step=2');
+        exit;
+    }
+    
+    $admin_user = $_POST['admin_user'] ?? '';
+    $admin_email = $_POST['admin_email'] ?? '';
+    $admin_pass = $_POST['admin_pass'] ?? '';
+    $admin_pass_confirm = $_POST['admin_pass_confirm'] ?? '';
+    
+    if (empty($admin_user) || empty($admin_email) || empty($admin_pass)) {
+        $errors[] = 'Bitte füllen Sie alle Felder aus.';
+    } elseif ($admin_pass !== $admin_pass_confirm) {
+        $errors[] = 'Die Passwörter stimmen nicht überein.';
+    } elseif (strlen($admin_pass) < 8) {
+        $errors[] = 'Das Passwort muss mindestens 8 Zeichen lang sein.';
+    } else {
+        try {
+            require_once __DIR__ . '/config.php';
+            require_once __DIR__ . '/database/Database.php';
+            
+            $db = Database::getInstance();
+            $pdo = $db->getConnection();
+            
+            // Prüfen ob bereits ein Admin existiert
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM admin_users");
+            $stmt->execute();
+            $count = $stmt->fetchColumn();
+            
+            if ($count > 0) {
+                // Admin bereits vorhanden, überspringen
+                $success[] = 'Admin-Account existiert bereits.';
+            } else {
+                // Admin-Account erstellen
+                $password_hash = password_hash($admin_pass, PASSWORD_BCRYPT);
+                $stmt = $pdo->prepare("
+                    INSERT INTO admin_users (username, email, password_hash, full_name) 
+                    VALUES (?, ?, ?, ?)
+                ");
+                $stmt->execute([$admin_user, $admin_email, $password_hash, 'Administrator']);
+                
+                $success[] = 'Admin-Account erfolgreich erstellt!';
+            }
+            
+            // Lock-File erstellen
+            file_put_contents($lock_file, date('Y-m-d H:i:s'));
+            
+            $_SESSION['installation_complete'] = true;
+            
+            // Redirect zu Schritt 4
+            ob_end_clean();
+            header('Location: ?step=4');
+            exit;
+            
+        } catch (Exception $e) {
+            $errors[] = 'Fehler beim Erstellen des Admin-Accounts: ' . $e->getMessage();
+        }
+    }
+}
+
+// Session-Checks für Steps
+if ($step == 3 && !isset($_SESSION['db_configured'])) {
+    ob_end_clean();
+    header('Location: ?step=2');
+    exit;
+}
+
+if ($step == 4 && !isset($_SESSION['installation_complete'])) {
+    ob_end_clean();
+    header('Location: ?step=1');
+    exit;
+}
 
 // CSS Styles
 $styles = <<<CSS
@@ -99,52 +249,48 @@ $styles = <<<CSS
     }
     .form-group small {
         display: block;
-        margin-top: 4px;
+        margin-top: 6px;
         color: #94a3b8;
         font-size: 13px;
+    }
+    .btn {
+        padding: 12px 28px;
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 15px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: transform 0.2s;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+    }
+    .btn-secondary {
+        background: #334155;
     }
     .alert {
         padding: 16px;
         border-radius: 8px;
         margin-bottom: 24px;
     }
-    .alert-success {
-        background: rgba(16, 185, 129, 0.1);
-        border: 1px solid #10b981;
-        color: #6ee7b7;
-    }
     .alert-error {
         background: rgba(239, 68, 68, 0.1);
         border: 1px solid #ef4444;
         color: #fca5a5;
     }
+    .alert-success {
+        background: rgba(16, 185, 129, 0.1);
+        border: 1px solid #10b981;
+        color: #6ee7b7;
+    }
     .alert-info {
         background: rgba(59, 130, 246, 0.1);
         border: 1px solid #3b82f6;
         color: #93c5fd;
-    }
-    .btn {
-        display: inline-block;
-        padding: 14px 28px;
-        background: #4f46e5;
-        color: white;
-        text-decoration: none;
-        border-radius: 8px;
-        border: none;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-    .btn:hover {
-        background: #4338ca;
-        transform: translateY(-2px);
-    }
-    .btn-secondary {
-        background: #334155;
-    }
-    .btn-secondary:hover {
-        background: #475569;
     }
     .check-list {
         list-style: none;
@@ -269,90 +415,27 @@ CSS;
                 
                 <?php if ($all_ok): ?>
                     <div class="alert alert-success">
-                        ✓ Alle Voraussetzungen erfüllt! Sie können mit der Installation fortfahren.
+                        ✓ Alle Systemvoraussetzungen erfüllt!
+                    </div>
+                    <div class="button-group">
+                        <div></div>
+                        <a href="?step=2" class="btn">Weiter zur Datenbank →</a>
                     </div>
                 <?php else: ?>
                     <div class="alert alert-error">
-                        ✗ Einige Voraussetzungen sind nicht erfüllt. Bitte beheben Sie die Fehler und laden Sie die Seite neu.
+                        ✗ Bitte beheben Sie die rot markierten Fehler vor der Installation.
+                    </div>
+                    <div class="button-group">
+                        <div></div>
+                        <a href="?step=1" class="btn btn-secondary">Neu laden</a>
                     </div>
                 <?php endif; ?>
-                
-                <div class="button-group">
-                    <div></div>
-                    <?php if ($all_ok): ?>
-                        <a href="?step=2" class="btn">Weiter →</a>
-                    <?php else: ?>
-                        <a href="?step=1" class="btn btn-secondary">Neu laden</a>
-                    <?php endif; ?>
-                </div>
             
             <?php
             // ========================================
             // SCHRITT 2: DATENBANK-KONFIGURATION
             // ========================================
             elseif ($step == 2):
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $db_host = $_POST['db_host'] ?? '';
-                    $db_name = $_POST['db_name'] ?? '';
-                    $db_user = $_POST['db_user'] ?? '';
-                    $db_pass = $_POST['db_pass'] ?? '';
-                    
-                    if (empty($db_host) || empty($db_name) || empty($db_user)) {
-                        $errors[] = 'Bitte füllen Sie alle Pflichtfelder aus.';
-                    } else {
-                        // Verbindung testen
-                        try {
-                            $pdo = new PDO(
-                                "mysql:host=$db_host;charset=utf8mb4",
-                                $db_user,
-                                $db_pass,
-                                [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
-                            );
-                            
-                            // Datenbank erstellen
-                            $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-                            $pdo->exec("USE `$db_name`");
-                            
-                            // Schema importieren - Statement für Statement
-                            $schema = file_get_contents(__DIR__ . '/database/schema.sql');
-                            
-                            // SQL Statements aufteilen
-                            $statements = array_filter(
-                                array_map('trim', explode(';', $schema)),
-                                function($stmt) {
-                                    // Leere Statements und Kommentare überspringen
-                                    return !empty($stmt) && 
-                                           !preg_match('/^--/', $stmt) && 
-                                           !preg_match('/^\/\*/', $stmt);
-                                }
-                            );
-                            
-                            // Jedes Statement einzeln ausführen
-                            foreach ($statements as $statement) {
-                                if (!empty($statement)) {
-                                    $pdo->exec($statement);
-                                }
-                            }
-                            
-                            // config.php aktualisieren
-                            $config = file_get_contents(__DIR__ . '/config.php');
-                            $config = preg_replace("/define\('DB_HOST',\s*'[^']*'\);/", "define('DB_HOST', '$db_host');", $config);
-                            $config = preg_replace("/define\('DB_NAME',\s*'[^']*'\);/", "define('DB_NAME', '$db_name');", $config);
-                            $config = preg_replace("/define\('DB_USER',\s*'[^']*'\);/", "define('DB_USER', '$db_user');", $config);
-                            $config = preg_replace("/define\('DB_PASS',\s*'[^']*'\);/", "define('DB_PASS', '$db_pass');", $config);
-                            $config = preg_replace("/define\('DEBUG_MODE',\s*true\);/", "define('DEBUG_MODE', false);", $config);
-                            
-                            file_put_contents(__DIR__ . '/config.php', $config);
-                            
-                            $_SESSION['db_configured'] = true;
-                            header('Location: ?step=3');
-                            exit;
-                            
-                        } catch (PDOException $e) {
-                            $errors[] = 'Datenbankfehler: ' . $e->getMessage();
-                        }
-                    }
-                }
             ?>
                 <h2>Datenbank-Konfiguration</h2>
                 <p style="margin-bottom: 24px; color: #94a3b8;">
@@ -405,48 +488,10 @@ CSS;
             // SCHRITT 3: ADMIN-ACCOUNT
             // ========================================
             elseif ($step == 3):
-                if (!isset($_SESSION['db_configured'])) {
-                    header('Location: ?step=2');
-                    exit;
-                }
-                
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $admin_password = $_POST['admin_password'] ?? '';
-                    $admin_password_confirm = $_POST['admin_password_confirm'] ?? '';
-                    
-                    if (strlen($admin_password) < 8) {
-                        $errors[] = 'Passwort muss mindestens 8 Zeichen lang sein.';
-                    } elseif ($admin_password !== $admin_password_confirm) {
-                        $errors[] = 'Passwörter stimmen nicht überein.';
-                    } else {
-                        require_once 'config.php';
-                        require_once 'database/Database.php';
-                        
-                        try {
-                            $db = Database::getInstance();
-                            $password_hash = password_hash($admin_password, PASSWORD_DEFAULT);
-                            
-                            $db->execute(
-                                "UPDATE admin_users SET password_hash = ? WHERE username = 'admin'",
-                                [$password_hash]
-                            );
-                            
-                            // Lock-Datei erstellen
-                            file_put_contents($lock_file, date('Y-m-d H:i:s'));
-                            
-                            $_SESSION['installation_complete'] = true;
-                            header('Location: ?step=4');
-                            exit;
-                            
-                        } catch (Exception $e) {
-                            $errors[] = 'Fehler: ' . $e->getMessage();
-                        }
-                    }
-                }
             ?>
-                <h2>Admin-Account einrichten</h2>
+                <h2>Admin-Account erstellen</h2>
                 <p style="margin-bottom: 24px; color: #94a3b8;">
-                    Setzen Sie ein sicheres Passwort für den Admin-Account.
+                    Erstellen Sie Ihren Administrator-Account.
                 </p>
                 
                 <?php if (!empty($errors)): ?>
@@ -457,73 +502,83 @@ CSS;
                     </div>
                 <?php endif; ?>
                 
-                <div class="alert alert-info">
-                    <strong>Benutzername:</strong> admin<br>
-                    Dieser kann später nicht geändert werden.
-                </div>
+                <?php if (!empty($success)): ?>
+                    <div class="alert alert-success">
+                        <?php foreach ($success as $msg): ?>
+                            <div>✓ <?php echo htmlspecialchars($msg); ?></div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
                 
                 <form method="POST">
                     <div class="form-group">
-                        <label>Neues Passwort *</label>
-                        <input type="password" name="admin_password" required minlength="8">
+                        <label>Benutzername *</label>
+                        <input type="text" name="admin_user" value="<?php echo htmlspecialchars($_POST['admin_user'] ?? 'admin'); ?>" required>
+                        <small>Ihr Login-Name</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>E-Mail-Adresse *</label>
+                        <input type="email" name="admin_email" value="<?php echo htmlspecialchars($_POST['admin_email'] ?? 'kontakt@koellner.life'); ?>" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Passwort *</label>
+                        <input type="password" name="admin_pass" required>
                         <small>Mindestens 8 Zeichen</small>
                     </div>
                     
                     <div class="form-group">
-                        <label>Passwort wiederholen *</label>
-                        <input type="password" name="admin_password_confirm" required minlength="8">
+                        <label>Passwort bestätigen *</label>
+                        <input type="password" name="admin_pass_confirm" required>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        ℹ Merken Sie sich diese Zugangsdaten gut! Sie benötigen sie für den Login unter /admin/
                     </div>
                     
                     <div class="button-group">
                         <a href="?step=2" class="btn btn-secondary">← Zurück</a>
-                        <button type="submit" class="btn">Installation abschließen →</button>
+                        <button type="submit" class="btn">Admin-Account erstellen →</button>
                     </div>
                 </form>
             
             <?php
             // ========================================
-            // SCHRITT 4: FERTIG
+            // SCHRITT 4: INSTALLATION ABGESCHLOSSEN
             // ========================================
             elseif ($step == 4):
-                if (!isset($_SESSION['installation_complete'])) {
-                    header('Location: ?step=1');
-                    exit;
-                }
             ?>
-                <div style="text-align: center; padding: 40px 0;">
-                    <div style="font-size: 64px; margin-bottom: 24px;">🎉</div>
-                    <h2 style="margin-bottom: 16px;">Installation erfolgreich!</h2>
-                    <p style="color: #94a3b8; margin-bottom: 32px;">
-                        Ihre Website ist jetzt einsatzbereit.
-                    </p>
-                </div>
+                <h2>🎉 Installation abgeschlossen!</h2>
+                <p style="margin-bottom: 24px; color: #94a3b8;">
+                    Ihre Website wurde erfolgreich eingerichtet.
+                </p>
                 
                 <div class="alert alert-success">
-                    <strong>✓ Alle Komponenten wurden erfolgreich eingerichtet:</strong><br><br>
-                    • Datenbank erstellt und konfiguriert<br>
-                    • Blog-System aktiviert<br>
-                    • CMS-System aktiviert<br>
-                    • Admin-Panel bereit
+                    <div>✓ Datenbank erstellt und konfiguriert</div>
+                    <div>✓ Admin-Account erstellt</div>
+                    <div>✓ System einsatzbereit</div>
                 </div>
                 
-                <div class="alert alert-error">
-                    <strong>⚠ WICHTIG - Sicherheitshinweis:</strong><br><br>
-                    Löschen Sie die Datei <code>setup.php</code> aus Sicherheitsgründen!
+                <div class="alert alert-info">
+                    <strong>Wichtige nächste Schritte:</strong>
+                    <ol style="margin-left: 20px; margin-top: 12px;">
+                        <li>Löschen Sie setup.php aus Sicherheitsgründen</li>
+                        <li>Loggen Sie sich im Admin-Panel ein</li>
+                        <li>Ändern Sie bei Bedarf Ihr Passwort</li>
+                    </ol>
                 </div>
-                
-                <h3 style="margin: 32px 0 16px;">Nächste Schritte:</h3>
                 
                 <div class="code-block">
-                    1. setup.php löschen<br>
-                    2. Zum Admin-Panel: /admin/<br>
-                    3. Einloggen mit: admin / (Ihr Passwort)<br>
-                    4. Ersten Blog-Post erstellen<br>
-                    5. Blog zur Navigation hinzufügen
+                    <strong>Admin-Panel:</strong><br>
+                    URL: <a href="/admin/" style="color: #6ee7b7;"><?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/admin/</a><br><br>
+                    <strong>Ihre Website:</strong><br>
+                    URL: <a href="/" style="color: #6ee7b7;"><?php echo $_SERVER['REQUEST_SCHEME'] . '://' . $_SERVER['HTTP_HOST']; ?>/</a>
                 </div>
                 
-                <div style="margin-top: 32px; text-align: center;">
-                    <a href="/admin/" class="btn" style="margin-right: 12px;">Zum Admin-Panel →</a>
-                    <a href="/" class="btn btn-secondary">Zur Website →</a>
+                <div class="button-group">
+                    <a href="/" class="btn btn-secondary">← Zur Website</a>
+                    <a href="/admin/" class="btn">Zum Admin-Panel →</a>
                 </div>
             
             <?php endif; ?>
@@ -531,3 +586,4 @@ CSS;
     </div>
 </body>
 </html>
+<?php ob_end_flush(); ?>
