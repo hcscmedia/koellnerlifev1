@@ -14,14 +14,19 @@ Thumbs.db
 *.log
 tmp/
 
-# Node modules (if added in future)
+# Node modules
 node_modules/
 npm-debug.log*
+package-lock.json
 
-# Build outputs (if added in future)
+# Build outputs
 dist/
 build/
 
 # Environment files
 .env
 .env.local
+
+# Database
+database/*.db
+database/*.db-journal

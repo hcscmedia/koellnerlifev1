@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Koellner.life CMS</title>
+    <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="login-screen" class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <h1 class="text-gradient">Koellner.life</h1>
+                <p>Admin Panel</p>
+            </div>
+            <form id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">Benutzername</label>
+                    <input type="text" id="username" name="username" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label for="password">Passwort</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full">Anmelden</button>
+                <div id="login-error" class="error-message" style="display: none;"></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="admin-dashboard" style="display: none;">
+        <!-- Navbar -->
+        <nav class="admin-navbar">
+            <div class="navbar-brand">
+                <h2 class="text-gradient">Koellner.life CMS</h2>
+            </div>
+            <div class="navbar-user">
+                <span id="user-name"></span>
+                <button id="logout-btn" class="btn btn-secondary">Abmelden</button>
+            </div>
+        </nav>
+
+        <div class="admin-container">
+            <!-- Sidebar -->
+            <aside class="admin-sidebar">
+                <ul class="sidebar-menu">
+                    <li><a href="#" data-section="dashboard" class="menu-item active">
+                        <span class="icon">📊</span> Dashboard
+                    </a></li>
+                    <li><a href="#" data-section="content" class="menu-item">
+                        <span class="icon">📝</span> Inhalte
+                    </a></li>
+                    <li><a href="#" data-section="services" class="menu-item">
+                        <span class="icon">⚡</span> Leistungen
+                    </a></li>
+                    <li><a href="#" data-section="messages" class="menu-item">
+                        <span class="icon">💬</span> Nachrichten
+                        <span id="unread-count" class="badge" style="display: none;"></span>
+                    </a></li>
+                </ul>
+            </aside>
+
+            <!-- Main Content -->
+            <main class="admin-main">
+                <!-- Dashboard Section -->
+                <section id="section-dashboard" class="admin-section">
+                    <h2>Dashboard</h2>
+                    <div class="stats-grid">
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon">📝</div>
+                            <div class="stat-info">
+                                <h3>Inhaltsbereiche</h3>
+                                <p class="stat-value" id="content-count">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-info">
+                                <h3>Leistungen</h3>
+                                <p class="stat-value" id="services-count">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon">💬</div>
+                            <div class="stat-info">
+                                <h3>Nachrichten</h3>
+                                <p class="stat-value" id="messages-count">0</p>
+                            </div>
+                        </div>
+                        <div class="stat-card glass-card">
+                            <div class="stat-icon">📬</div>
+                            <div class="stat-info">
+                                <h3>Ungelesen</h3>
+                                <p class="stat-value" id="unread-messages">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Content Section -->
+                <section id="section-content" class="admin-section" style="display: none;">
+                    <h2>Inhalte verwalten</h2>
+                    <div id="content-list" class="content-grid"></div>
+                </section>
+
+                <!-- Services Section -->
+                <section id="section-services" class="admin-section" style="display: none;">
+                    <h2>Leistungen verwalten</h2>
+                    <button id="add-service-btn" class="btn btn-primary mb-3">+ Neue Leistung</button>
+                    <div id="services-list" class="services-grid"></div>
+                </section>
+
+                <!-- Messages Section -->
+                <section id="section-messages" class="admin-section" style="display: none;">
+                    <h2>Nachrichten</h2>
+                    <div id="messages-list" class="messages-list"></div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="edit-content-modal" class="modal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3>Inhalt bearbeiten</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="edit-content-form">
+                <input type="hidden" id="edit-section" name="section">
+                <div class="form-group">
+                    <label for="edit-title">Titel</label>
+                    <input type="text" id="edit-title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-subtitle">Untertitel</label>
+                    <input type="text" id="edit-subtitle" name="subtitle">
+                </div>
+                <div class="form-group">
+                    <label for="edit-description">Beschreibung</label>
+                    <textarea id="edit-description" name="description" rows="4"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-service-modal" class="modal">
+        <div class="modal-content glass-card">
+            <div class="modal-header">
+                <h3 id="service-modal-title">Leistung bearbeiten</h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="edit-service-form">
+                <input type="hidden" id="edit-service-id" name="id">
+                <div class="form-group">
+                    <label for="edit-service-number">Nummer</label>
+                    <input type="text" id="edit-service-number" name="number" placeholder="01">
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-title">Titel</label>
+                    <input type="text" id="edit-service-title" name="title" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-description">Beschreibung</label>
+                    <textarea id="edit-service-description" name="description" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-icon">Icon</label>
+                    <input type="text" id="edit-service-icon" name="icon" placeholder="code">
+                </div>
+                <div class="form-group">
+                    <label for="edit-service-order">Reihenfolge</label>
+                    <input type="number" id="edit-service-order" name="order_index" value="1">
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="edit-service-active" name="active" checked>
+                        Aktiv
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary modal-cancel">Abbrechen</button>
+                    <button type="submit" class="btn btn-primary">Speichern</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
