@@ -215,6 +215,7 @@ document.body.style.opacity = '1';
 const particlesCanvas = document.getElementById('ai-particles');
 let particles = [];
 let particlesCtx;
+let animationFrameId;
 
 if (particlesCanvas) {
     particlesCtx = particlesCanvas.getContext('2d');
@@ -258,28 +259,36 @@ if (particlesCanvas) {
             particlesCtx.fillStyle = particle.color;
             particlesCtx.fill();
             
-            // Draw connections
-            particles.forEach((otherParticle, j) => {
-                if (i !== j) {
-                    const dx = particle.x - otherParticle.x;
-                    const dy = particle.y - otherParticle.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    
-                    if (distance < 150) {
-                        particlesCtx.beginPath();
-                        particlesCtx.moveTo(particle.x, particle.y);
-                        particlesCtx.lineTo(otherParticle.x, otherParticle.y);
-                        particlesCtx.strokeStyle = `rgba(0, 212, 255, ${0.2 * (1 - distance / 150)})`;
-                        particlesCtx.lineWidth = 0.5;
-                        particlesCtx.stroke();
-                    }
+            // Draw connections - optimized to avoid duplicate checks
+            for (let j = i + 1; j < particles.length; j++) {
+                const otherParticle = particles[j];
+                const dx = particle.x - otherParticle.x;
+                const dy = particle.y - otherParticle.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 150) {
+                    particlesCtx.beginPath();
+                    particlesCtx.moveTo(particle.x, particle.y);
+                    particlesCtx.lineTo(otherParticle.x, otherParticle.y);
+                    particlesCtx.strokeStyle = `rgba(0, 212, 255, ${0.2 * (1 - distance / 150)})`;
+                    particlesCtx.lineWidth = 0.5;
+                    particlesCtx.stroke();
                 }
-            });
+            }
         });
         
-        requestAnimationFrame(animateParticles);
+        animationFrameId = requestAnimationFrame(animateParticles);
     }
     
     initParticles();
     animateParticles();
+    
+    // Stop animation when page is hidden
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden && animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        } else if (!document.hidden && particlesCanvas) {
+            animateParticles();
+        }
+    });
 }

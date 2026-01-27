@@ -240,6 +240,7 @@ p {
 
 .text-gradient {
     background: linear-gradient(135deg, #00f0ff 0%, #b47aff 50%, #ff3d9a 100%);
+    background-size: 200% 200%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -476,8 +477,7 @@ p {
 }
 
 .glass-card:hover::before {
-    opacity: 1;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 1.5s ease-out;
 }
 
 .glass-card:hover {
