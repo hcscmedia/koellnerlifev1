@@ -46,6 +46,7 @@ composer.lock
 
 # Backup files
 *.sql
+!database/schema.sql
 *.backup
 backup/
 
