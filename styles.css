@@ -1,11 +1,16 @@
 /* ===== CSS Variables ===== */
 :root {
-    /* Colors */
-    --primary-color: #6366f1;
-    --primary-dark: #4f46e5;
-    --primary-light: #818cf8;
-    --secondary-color: #8b5cf6;
-    --accent-color: #ec4899;
+    /* AI-Themed Colors */
+    --primary-color: #00d4ff;
+    --primary-dark: #00a3cc;
+    --primary-light: #33ddff;
+    --secondary-color: #a855f7;
+    --accent-color: #f472b6;
+    --neon-blue: #00f0ff;
+    --neon-purple: #b47aff;
+    --neon-pink: #ff3d9a;
+    --ai-cyan: #06b6d4;
+    --ai-teal: #14b8a6;
     
     --text-primary: #1f2937;
     --text-secondary: #6b7280;
@@ -13,12 +18,13 @@
     
     --bg-primary: #ffffff;
     --bg-secondary: #f9fafb;
-    --bg-dark: #111827;
+    --bg-dark: #0a0e27;
     
-    /* Glassmorphism */
-    --glass-bg: rgba(255, 255, 255, 0.7);
-    --glass-border: rgba(255, 255, 255, 0.18);
-    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+    /* Glassmorphism - AI Enhanced */
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(0, 212, 255, 0.2);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 212, 255, 0.15);
+    --glass-glow: 0 0 20px rgba(0, 212, 255, 0.3);
     
     /* Typography */
     --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -184,7 +190,38 @@ p {
     justify-content: center;
     position: relative;
     overflow: hidden;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0f1729 100%);
+}
+
+/* AI Neural Network Background */
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(0, 212, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(244, 114, 182, 0.1) 0%, transparent 50%);
+    animation: pulseGlow 4s ease-in-out infinite;
+}
+
+/* AI Grid Pattern */
+.hero::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: 
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.5;
+    animation: gridMove 20s linear infinite;
 }
 
 .hero-content {
@@ -202,10 +239,11 @@ p {
 }
 
 .text-gradient {
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0ff 100%);
+    background: linear-gradient(135deg, #00f0ff 0%, #b47aff 50%, #ff3d9a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    animation: gradientShift 3s ease infinite;
 }
 
 .hero-subtitle {
@@ -236,14 +274,14 @@ p {
     position: absolute;
     border-radius: 50%;
     filter: blur(80px);
-    opacity: 0.5;
-    animation: float 20s ease-in-out infinite;
+    opacity: 0.4;
+    animation: float 20s ease-in-out infinite, orbGlow 3s ease-in-out infinite;
 }
 
 .orb-1 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.8) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(0, 240, 255, 0.8) 0%, transparent 70%);
     top: -200px;
     left: -200px;
     animation-delay: 0s;
@@ -252,7 +290,7 @@ p {
 .orb-2 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(139, 92, 246, 0.8) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(180, 122, 255, 0.8) 0%, transparent 70%);
     bottom: -150px;
     right: -150px;
     animation-delay: 5s;
@@ -261,11 +299,22 @@ p {
 .orb-3 {
     width: 350px;
     height: 350px;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.6) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 61, 154, 0.6) 0%, transparent 70%);
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     animation-delay: 10s;
+}
+
+/* AI Particles Canvas */
+#ai-particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
 }
 
 /* ===== Buttons ===== */
@@ -282,26 +331,65 @@ p {
 }
 
 .btn-primary {
-    background: white;
-    color: var(--primary-color);
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    background: linear-gradient(135deg, var(--neon-blue), var(--ai-cyan));
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4), 0 0 20px rgba(0, 212, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-primary:hover::before {
+    width: 300px;
+    height: 300px;
 }
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 6px 25px rgba(0, 212, 255, 0.6), 0 0 30px rgba(0, 212, 255, 0.3);
 }
 
 .btn-secondary {
     background: transparent;
     color: white;
-    border: 2px solid white;
+    border: 2px solid var(--neon-blue);
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-secondary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent);
+    transition: left 0.5s;
+}
+
+.btn-secondary:hover::before {
+    left: 100%;
 }
 
 .btn-secondary:hover {
-    background: white;
-    color: var(--primary-color);
+    background: linear-gradient(135deg, var(--neon-blue), var(--ai-cyan));
+    border-color: var(--neon-blue);
+    color: white;
     transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 212, 255, 0.5);
 }
 
 .btn-full {
@@ -365,11 +453,37 @@ p {
     box-shadow: var(--glass-shadow);
     padding: var(--spacing-md);
     transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.glass-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(0, 212, 255, 0.1),
+        transparent
+    );
+    transform: rotate(45deg);
+    transition: all 0.5s ease;
+    opacity: 0;
+}
+
+.glass-card:hover::before {
+    opacity: 1;
+    animation: shimmer 1.5s infinite;
 }
 
 .glass-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.25);
+    box-shadow: var(--glass-glow), 0 12px 40px 0 rgba(0, 212, 255, 0.25);
+    border-color: rgba(0, 212, 255, 0.4);
 }
 
 /* ===== About Section ===== */
@@ -388,13 +502,29 @@ p {
     width: 80px;
     height: 80px;
     margin: 0 auto var(--spacing-sm);
-    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
     border-radius: var(--radius-md);
     display: flex;
     align-items: center;
     justify-content: center;
     color: white;
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4), 0 0 30px rgba(0, 212, 255, 0.2);
+    animation: iconPulse 2s ease-in-out infinite;
+    position: relative;
+}
+
+.card-icon::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+    border-radius: var(--radius-md);
+    z-index: -1;
+    filter: blur(10px);
+    opacity: 0.5;
 }
 
 /* ===== Services Section ===== */
@@ -601,6 +731,63 @@ p {
     }
     75% {
         transform: translate(2vw, 3vh);
+    }
+}
+
+/* AI-Themed Animations */
+@keyframes pulseGlow {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes gridMove {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(50px);
+    }
+}
+
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+@keyframes orbGlow {
+    0%, 100% {
+        opacity: 0.4;
+        filter: blur(80px);
+    }
+    50% {
+        opacity: 0.6;
+        filter: blur(60px);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%) rotate(45deg);
+    }
+    100% {
+        transform: translateX(100%) rotate(45deg);
+    }
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        box-shadow: 0 8px 20px rgba(0, 212, 255, 0.4), 0 0 30px rgba(0, 212, 255, 0.2);
+    }
+    50% {
+        box-shadow: 0 8px 30px rgba(0, 212, 255, 0.6), 0 0 40px rgba(0, 212, 255, 0.4);
     }
 }
 

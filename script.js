@@ -201,9 +201,85 @@ let resizeTimer;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-        // Handle resize events here if needed
+        // Resize particles canvas if exists
+        if (particlesCanvas) {
+            initParticles();
+        }
     }, 250);
 });
 
 // Smooth page load
 document.body.style.opacity = '1';
+
+// AI Particles Animation
+const particlesCanvas = document.getElementById('ai-particles');
+let particles = [];
+let particlesCtx;
+
+if (particlesCanvas) {
+    particlesCtx = particlesCanvas.getContext('2d');
+    
+    function initParticles() {
+        particlesCanvas.width = window.innerWidth;
+        particlesCanvas.height = window.innerHeight;
+        particles = [];
+        
+        // Create particles
+        const particleCount = Math.min(50, Math.floor(window.innerWidth / 20));
+        for (let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * particlesCanvas.width,
+                y: Math.random() * particlesCanvas.height,
+                size: Math.random() * 2 + 1,
+                speedX: (Math.random() - 0.5) * 0.5,
+                speedY: (Math.random() - 0.5) * 0.5,
+                color: `hsla(${180 + Math.random() * 60}, 100%, ${50 + Math.random() * 30}%, ${0.3 + Math.random() * 0.4})`
+            });
+        }
+    }
+    
+    function animateParticles() {
+        particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
+        
+        particles.forEach((particle, i) => {
+            // Update position
+            particle.x += particle.speedX;
+            particle.y += particle.speedY;
+            
+            // Wrap around screen
+            if (particle.x < 0) particle.x = particlesCanvas.width;
+            if (particle.x > particlesCanvas.width) particle.x = 0;
+            if (particle.y < 0) particle.y = particlesCanvas.height;
+            if (particle.y > particlesCanvas.height) particle.y = 0;
+            
+            // Draw particle
+            particlesCtx.beginPath();
+            particlesCtx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+            particlesCtx.fillStyle = particle.color;
+            particlesCtx.fill();
+            
+            // Draw connections
+            particles.forEach((otherParticle, j) => {
+                if (i !== j) {
+                    const dx = particle.x - otherParticle.x;
+                    const dy = particle.y - otherParticle.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 150) {
+                        particlesCtx.beginPath();
+                        particlesCtx.moveTo(particle.x, particle.y);
+                        particlesCtx.lineTo(otherParticle.x, otherParticle.y);
+                        particlesCtx.strokeStyle = `rgba(0, 212, 255, ${0.2 * (1 - distance / 150)})`;
+                        particlesCtx.lineWidth = 0.5;
+                        particlesCtx.stroke();
+                    }
+                }
+            });
+        });
+        
+        requestAnimationFrame(animateParticles);
+    }
+    
+    initParticles();
+    animateParticles();
+}
