@@ -313,9 +313,26 @@ CSS;
                             $pdo->exec("CREATE DATABASE IF NOT EXISTS `$db_name` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
                             $pdo->exec("USE `$db_name`");
                             
-                            // Schema importieren
+                            // Schema importieren - Statement für Statement
                             $schema = file_get_contents(__DIR__ . '/database/schema.sql');
-                            $pdo->exec($schema);
+                            
+                            // SQL Statements aufteilen
+                            $statements = array_filter(
+                                array_map('trim', explode(';', $schema)),
+                                function($stmt) {
+                                    // Leere Statements und Kommentare überspringen
+                                    return !empty($stmt) && 
+                                           !preg_match('/^--/', $stmt) && 
+                                           !preg_match('/^\/\*/', $stmt);
+                                }
+                            );
+                            
+                            // Jedes Statement einzeln ausführen
+                            foreach ($statements as $statement) {
+                                if (!empty($statement)) {
+                                    $pdo->exec($statement);
+                                }
+                            }
                             
                             // config.php aktualisieren
                             $config = file_get_contents(__DIR__ . '/config.php');
